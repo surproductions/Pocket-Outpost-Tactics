@@ -18,7 +18,7 @@ Everything you need to fill into App Store Connect. Text fields are also in `fas
 | Category | Games → Strategy (secondary: Games → Board) |
 | Content rights | Does not contain third-party content (all art and audio are generated in code) |
 | Age rating questionnaire | Cartoon or Fantasy Violence: **Infrequent/Mild**. Everything else: **None**. No user-generated content, no web access, no gambling, no contests. Expected rating **9+**. |
-| Privacy Policy URL | https://surproductions.github.io/Pocket-Outpost-Tactics/privacy.html |
+| Privacy Policy URL | https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/PRIVACY.md |
 
 ## 3. App Privacy ("nutrition label")
 Answer **"No, we do not collect data from this app."** That gives **Data Not Collected**. This matches the code (no analytics, no ads, no network calls; saves are local) and the bundled `PrivacyInfo.xcprivacy` (no tracking, no collected data types).
@@ -44,8 +44,8 @@ If the product doesn't exist, the game simply hides the purchase card. Nothing b
 | Promotional text | `fastlane/metadata/en-US/promotional_text.txt` |
 | Description | `fastlane/metadata/en-US/description.txt` |
 | Keywords | `fastlane/metadata/en-US/keywords.txt` |
-| Support URL | https://surproductions.github.io/Pocket-Outpost-Tactics/support.html |
-| Marketing URL | https://surproductions.github.io/Pocket-Outpost-Tactics/ |
+| Support URL | https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/SUPPORT.md |
+| Marketing URL | https://github.com/surproductions/Pocket-Outpost-Tactics (optional) |
 | Copyright | 2026 SUR Productions |
 | Build | Select the TestFlight build uploaded by CI |
 | App Review notes | `fastlane/review_notes.txt`; no demo account needed |

@@ -2,9 +2,9 @@
 
 **Small Squads. Big Strategies.** A bite-sized turn-based tactics + outpost-building game for iPhone (portrait, 3–5 minute battles), written in Swift with SwiftUI and SpriteKit.
 
-- Website: https://surproductions.github.io/Pocket-Outpost-Tactics/
-- Privacy policy: https://surproductions.github.io/Pocket-Outpost-Tactics/privacy.html
-- Support: https://surproductions.github.io/Pocket-Outpost-Tactics/support.html
+- Optional website (after enabling GitHub Pages, see below): https://surproductions.github.io/Pocket-Outpost-Tactics/
+- Privacy policy: https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/PRIVACY.md
+- Support: https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/SUPPORT.md
 - Releases (signed IPA, checksum, screenshots): https://github.com/surproductions/Pocket-Outpost-Tactics/releases
 
 ## Design summary
@@ -116,5 +116,8 @@ Team ID, bundle ID and export method (App Store vs Ad Hoc) are read from the pro
 Common alternative secret names are also recognised (see the workflow). The "Configure signing" step logs which inputs were found, never their values. With an API key present, App Store builds are also uploaded to TestFlight (the app record must exist in App Store Connect first).
 
 An App Store-signed IPA installs through TestFlight/App Store only. An Ad Hoc IPA installs only on devices registered in its profile.
+
+### Optional: GitHub Pages website
+`docs/` contains a styled landing page, privacy policy and support page. To publish it, go to **Settings → Pages → Build and deployment → Source: GitHub Actions**, then run the **Publish website** workflow. The Markdown versions ([PRIVACY.md](PRIVACY.md), [SUPPORT.md](SUPPORT.md)) are already public, and those are the URLs the app and the App Store metadata use.
 
 See [APP_STORE.md](APP_STORE.md) for the submission checklist.

@@ -303,12 +303,13 @@ final class BattleController: ObservableObject {
         inspectedTile = nil
         pendingTarget = nil
         mode = .idle
+        // Claim the turn synchronously so a second End Turn (tap or auto-end) can't start another phase.
+        busy = true
         refreshOverlays()
         Task { await runEnemyPhase() }
     }
 
     private func runEnemyPhase() async {
-        busy = true
         SoundEngine.shared.play(.turn)
         showBanner("Enemy Turn")
         let start = state.endPlayerTurn()

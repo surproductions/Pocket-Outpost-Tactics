@@ -88,6 +88,7 @@ final class BattleScene: SKScene {
         origin = CGPoint(x: -boardW / 2 + tileW / 2, y: centerY + boardH / 2 - tileH / 2)
         rebuildBoard()
         sync(with: state, animated: false)
+        Task { @MainActor [weak self] in self?.controller?.refreshOverlays() }
     }
 
     func position(of p: GridPoint) -> CGPoint {

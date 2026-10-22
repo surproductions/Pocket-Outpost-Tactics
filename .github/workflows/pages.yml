@@ -1,9 +1,7 @@
 name: Publish website (privacy policy & support)
 
+# Run manually after enabling Pages (Settings > Pages > Source: GitHub Actions).
 on:
-  push:
-    branches: [main]
-    paths: ["docs/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:

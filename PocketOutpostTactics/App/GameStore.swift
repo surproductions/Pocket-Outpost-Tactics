@@ -26,8 +26,8 @@ final class GameStore: ObservableObject {
     let isDemo: Bool
     let screenshotScene: String?
 
-    static let privacyPolicyURL = URL(string: "https://surproductions.github.io/Pocket-Outpost-Tactics/privacy.html")!
-    static let supportURL = URL(string: "https://surproductions.github.io/Pocket-Outpost-Tactics/support.html")!
+    static let privacyPolicyURL = URL(string: "https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/PRIVACY.md")!
+    static let supportURL = URL(string: "https://github.com/surproductions/Pocket-Outpost-Tactics/blob/main/SUPPORT.md")!
 
     init(arguments: [String] = ProcessInfo.processInfo.arguments) {
         saveStore = SaveStore.defaultStore()
