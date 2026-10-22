@@ -35,16 +35,37 @@ decode_b64() {
 }
 
 AUTH_ARGS=""
+# Trim stray whitespace/newlines that often sneak into pasted secrets.
+ASC_KEY_ID="$(printf '%s' "${ASC_KEY_ID:-}" | tr -d '[:space:]')"
+ASC_ISSUER_ID="$(printf '%s' "${ASC_ISSUER_ID:-}" | tr -d '[:space:]')"
+TEAM_ID="$(printf '%s' "${TEAM_ID:-}" | tr -d '[:space:]')"
 if have ASC_KEY_ID && have ASC_ISSUER_ID && have ASC_KEY; then
   KEY_DIR="$HOME/.appstoreconnect/private_keys"
   mkdir -p "$KEY_DIR"
   KEY_PATH="$KEY_DIR/AuthKey_${ASC_KEY_ID}.p8"
-  if printf '%s' "$ASC_KEY" | grep -q "BEGIN PRIVATE KEY"; then
-    printf '%s\n' "$ASC_KEY" > "$KEY_PATH"
-  else
-    decode_b64 "$ASC_KEY" > "$KEY_PATH"
-  fi
+  # Rebuild a clean PEM whatever shape the secret has: full file, one line, literal \n, or base64.
+  ASC_KEY="$ASC_KEY" python3 - "$KEY_PATH" <<'PY'
+import base64, os, re, sys
+raw = os.environ["ASC_KEY"].replace("\\n", "\n").strip()
+if "BEGIN" not in raw:
+    try:
+        decoded = base64.b64decode(re.sub(r"\s", "", raw), validate=False).decode("utf-8", "ignore")
+        if "BEGIN" in decoded:
+            raw = decoded
+    except Exception:
+        pass
+body = re.sub(r"-----[A-Z ]+-----", "", raw)
+body = re.sub(r"[^A-Za-z0-9+/=]", "", body)
+if len(body) < 100:
+    sys.exit("The App Store Connect API key secret does not look like a .p8 private key")
+lines = [body[i:i + 64] for i in range(0, len(body), 64)]
+pem = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(lines) + "\n-----END PRIVATE KEY-----\n"
+with open(sys.argv[1], "w") as f:
+    f.write(pem)
+print("API key file written (%d base64 chars)" % len(body))
+PY
   chmod 600 "$KEY_PATH"
+  if openssl pkey -in "$KEY_PATH" -noout 2>/dev/null; then echo "API key parses as a valid private key"; else echo "::warning::The API key does not parse as a private key. Check the ASC_KEY_P8 secret contents."; fi
   AUTH_ARGS="-allowProvisioningUpdates -authenticationKeyPath $KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
   echo "ASC_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
   echo "HAS_ASC_KEY=1" >> "$GITHUB_ENV"
