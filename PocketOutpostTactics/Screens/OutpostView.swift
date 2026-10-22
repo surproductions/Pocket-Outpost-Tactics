@@ -86,6 +86,7 @@ struct OutpostView: View {
                                 .font(GameFont.body(10))
                                 .foregroundStyle(Palette.cream)
                                 .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                             Text("Lv \(level)")
                                 .font(GameFont.heading(11))
                                 .foregroundStyle(Palette.gold)
