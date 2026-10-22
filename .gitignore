@@ -1,0 +1,22 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.xcresult
+.swiftpm/
+Packages/GameCore/.build/
+Packages/GameCore/.swiftpm/
+release/
+
+# Signing material must never be committed
+Config/Signing.generated.xcconfig
+*.p12
+*.mobileprovision
+*.p8
+*.cer
+ExportOptions.plist
+
+# OS
+.DS_Store

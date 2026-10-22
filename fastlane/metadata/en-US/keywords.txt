@@ -1,0 +1,1 @@
+tactics,strategy,turn based,grid,squad,outpost,base building,offline,fantasy,chess,puzzle,rpg

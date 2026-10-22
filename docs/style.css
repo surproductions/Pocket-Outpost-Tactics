@@ -1,0 +1,17 @@
+:root{--forest:#63876A;--sand:#E8CE9C;--slate:#617C98;--copper:#D58B56;--cream:#FFF2DB;--ink:#26323B;--gold:#F3C86B;--bg:#1C2630}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-rounded,-apple-system,"SF Pro Rounded",system-ui,sans-serif}
+header{background:linear-gradient(#2E4A44,var(--bg));color:var(--cream);text-align:center;padding:48px 16px 32px}
+header h1{margin:0;font-size:clamp(28px,6vw,44px);font-weight:900}
+header p{margin:6px 0 0;color:var(--sand)}
+main{max-width:760px;margin:-12px auto 48px;padding:0 16px}
+.card{background:var(--cream);border:3px solid #C9A97A;border-radius:22px;padding:24px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+h2{margin-top:1.6em;font-size:20px}
+h2:first-child{margin-top:0}
+a{color:#9C5E33;font-weight:700}
+nav{text-align:center;margin:20px 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+nav a{color:var(--cream)}
+.shots{display:flex;gap:12px;overflow-x:auto;padding:8px 0}
+.shots img{height:420px;border-radius:24px;border:3px solid var(--ink)}
+footer{text-align:center;color:#9aa;font-size:13px;padding:0 16px 32px}
+.btn{display:inline-block;background:var(--copper);color:var(--cream);padding:12px 22px;border-radius:14px;text-decoration:none;border:2px solid var(--ink)}

@@ -1,0 +1,6 @@
+Thank you for reviewing Pocket Outpost Tactics.
+
+- No account or login is required. The game is fully playable offline.
+- To reach gameplay quickly: tap Play, then "To Battle!". Tap the Guardian, tap a blue tile to move, and tap the red raider twice to attack.
+- The optional in-app purchase "Supporter Pack" (non-consumable) only unlocks a cosmetic golden banner shown over the outpost. It is in Banners (from the outpost screen) and Settings > Restore Purchases.
+- The app collects no data, contains no ads and no third-party SDKs.

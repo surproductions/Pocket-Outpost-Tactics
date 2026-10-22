@@ -1,0 +1,216 @@
+name: iOS Build, Test & Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish the signed IPA to the v1.0.0 GitHub Release"
+        type: boolean
+        default: true
+      upload_testflight:
+        description: "Upload to TestFlight (needs App Store Connect API key + app record)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SCHEME: PocketOutpostTactics
+  VERSION: 1.0.0
+
+jobs:
+  build:
+    name: Test, screenshot, sign & export
+    runs-on: macos-26
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest stable Xcode
+        run: |
+          ls -d /Applications/Xcode*.app || true
+          XC=$(ls -d /Applications/Xcode_*.app | grep -vi -e beta -e rc | sort -V | tail -1)
+          [ -n "$XC" ] || XC=/Applications/Xcode.app
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: GameCore unit tests (rules, AI, economy, saves, auto-play)
+        run: |
+          set -o pipefail
+          swift test --package-path Packages/GameCore 2>&1 | tee build-gamecore-tests.log
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Pick iPhone simulator (6.9-inch class)
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 scripts/pick_simulator.py)
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Build and run UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project PocketOutpostTactics.xcodeproj -scheme "$SCHEME" \
+            -destination "id=$SIM_UDID" -derivedDataPath build/dd \
+            -resultBundlePath build/UITests.xcresult \
+            2>&1 | tee build-uitests.log | (command -v xcbeautify >/dev/null && xcbeautify || cat)
+
+      - name: Capture App Store screenshots
+        run: |
+          set -e
+          APP=$(find build/dd/Build/Products -name "PocketOutpostTactics.app" -path "*iphonesimulator*" | head -1)
+          BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")
+          xcrun simctl boot "$SIM_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIM_UDID" -b
+          xcrun simctl status_bar "$SIM_UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          xcrun simctl install "$SIM_UDID" "$APP"
+          mkdir -p screenshots
+          i=1
+          for scene in title outpost battle campaign squad victory; do
+            xcrun simctl terminate "$SIM_UDID" "$BUNDLE" 2>/dev/null || true
+            xcrun simctl launch "$SIM_UDID" "$BUNDLE" -screenshot "$scene"
+            sleep 7
+            xcrun simctl io "$SIM_UDID" screenshot "screenshots/0${i}-${scene}.png"
+            i=$((i+1))
+          done
+          sips -g pixelWidth -g pixelHeight screenshots/*.png
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-and-logs
+          path: |
+            screenshots/
+            build-*.log
+          if-no-files-found: warn
+
+      - name: Configure signing from repository secrets
+        if: github.event_name != 'pull_request'
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          CERT_P12_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 || secrets.CERTIFICATE_BASE64 || secrets.P12_BASE64 || secrets.IOS_CERTIFICATE_BASE64 || secrets.DISTRIBUTION_CERTIFICATE_BASE64 || secrets.IOS_DIST_CERT_BASE64 || secrets.CERTIFICATES_P12 || secrets.CERTIFICATE_P12 || secrets.P12_CERTIFICATE || secrets.IOS_P12_BASE64 || secrets.APPLE_CERTIFICATE_BASE64 || secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          CERT_PASSWORD: ${{ secrets.P12_PASSWORD || secrets.CERTIFICATE_PASSWORD || secrets.BUILD_CERTIFICATE_PASSWORD || secrets.IOS_CERTIFICATE_PASSWORD || secrets.CERTIFICATES_P12_PASSWORD || secrets.DISTRIBUTION_CERTIFICATE_PASSWORD || secrets.P12_CERTIFICATE_PASSWORD || secrets.IOS_P12_PASSWORD || secrets.APPLE_CERTIFICATE_PASSWORD || secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 || secrets.PROVISIONING_PROFILE_BASE64 || secrets.PROVISION_PROFILE_BASE64 || secrets.MOBILEPROVISION_BASE64 || secrets.IOS_PROVISIONING_PROFILE_BASE64 || secrets.PROVISIONING_PROFILE || secrets.MOBILE_PROVISION_BASE64 || secrets.IOS_PROFILE_BASE64 || secrets.APPLE_PROVISIONING_PROFILE_BASE64 || secrets.PROVISIONING_PROFILE_DATA }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.ASC_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.APPSTORE_KEY_ID || secrets.ASC_API_KEY_ID || secrets.API_KEY_ID || secrets.APPSTORE_API_KEY_ID || secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID || secrets.APPSTORE_ISSUER_ID || secrets.ASC_API_ISSUER_ID || secrets.API_ISSUER_ID || secrets.APPSTORE_API_ISSUER_ID || secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY || secrets.APP_STORE_CONNECT_API_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY || secrets.ASC_KEY || secrets.ASC_API_KEY || secrets.APPSTORE_PRIVATE_KEY || secrets.APPSTORE_API_PRIVATE_KEY || secrets.API_KEY_P8 || secrets.APP_STORE_CONNECT_API_KEY_CONTENT || secrets.ASC_KEY_CONTENT }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID || secrets.TEAM_ID || secrets.DEVELOPMENT_TEAM || secrets.APPLE_DEVELOPER_TEAM_ID || secrets.IOS_TEAM_ID }}
+          BUNDLE_ID_SECRET: ${{ secrets.APP_BUNDLE_ID || secrets.BUNDLE_ID || secrets.BUNDLE_IDENTIFIER || secrets.APP_IDENTIFIER || secrets.IOS_BUNDLE_ID }}
+        run: scripts/ci_signing.sh
+
+      - name: Archive (Release)
+        if: github.event_name != 'pull_request' && env.SIGNING_MODE != 'none'
+        run: |
+          set -o pipefail
+          xcodegen generate
+          xcodebuild archive \
+            -project PocketOutpostTactics.xcodeproj -scheme "$SCHEME" -configuration Release \
+            -destination "generic/platform=iOS" -archivePath build/PocketOutpostTactics.xcarchive \
+            $XCODE_AUTH_ARGS 2>&1 | tee build-archive.log | (command -v xcbeautify >/dev/null && xcbeautify || cat)
+
+      - name: Export IPA
+        if: github.event_name != 'pull_request' && env.SIGNING_MODE != 'none'
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/PocketOutpostTactics.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -exportPath build/export $XCODE_AUTH_ARGS 2>&1 | tee build-export.log
+          IPA=$(find build/export -name "*.ipa" | head -1)
+          test -f "$IPA"
+          mkdir -p release
+          cp "$IPA" "release/PocketOutpostTactics-v${VERSION}.ipa"
+          (cd release && shasum -a 256 "PocketOutpostTactics-v${VERSION}.ipa" > "PocketOutpostTactics-v${VERSION}.ipa.sha256")
+          (cd screenshots && zip -q -r "../release/AppStoreScreenshots-6.9in.zip" .)
+          cat release/*.sha256
+          ls -la release
+          echo "IPA_READY=1" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        if: env.IPA_READY == '1'
+        with:
+          name: PocketOutpostTactics-ipa
+          path: release/
+
+      - name: Publish GitHub Release v1.0.0
+        if: env.IPA_READY == '1' && (github.event_name == 'push' || inputs.publish_release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$EXPORT_METHOD" in
+            app-store-connect) INSTALL="This IPA is signed for App Store / TestFlight distribution. Install it through TestFlight, or submit it in App Store Connect; it cannot be side-loaded directly." ;;
+            release-testing|debugging) INSTALL="This IPA is Ad Hoc signed. It installs only on devices registered in the provisioning profile (Apple Configurator, Finder, or an OTA manifest)." ;;
+            enterprise) INSTALL="This IPA is signed with an enterprise profile." ;;
+            *) INSTALL="" ;;
+          esac
+          cat > release/NOTES.md <<EOF
+          ## Pocket Outpost Tactics v${VERSION} (build ${{ github.run_number }})
+
+          Small Squads. Big Strategies. A bite-sized turn-based tactics game for iPhone.
+
+          - 10 handcrafted Greenwood Frontier missions plus 15 more across Dustfall Canyon, Frostwatch Pass and Ember Ruins
+          - 4 squad classes (Guardian, Ranger, Scout, Engineer), 4 enemy types including the Warlord boss
+          - Upgradeable outpost (Command Center, Watchtower, Barracks, Workshop, Supply Depot)
+          - Daily Skirmish, three-star ratings, save & resume, haptics, synthesized sound, Reduce Motion support
+
+          **Signing / install:** ${INSTALL}
+
+          SHA-256: \`$(cut -d' ' -f1 release/PocketOutpostTactics-v${VERSION}.ipa.sha256)\`
+          Commit: ${{ github.sha }}
+          EOF
+          sed -i '' 's/^          //' release/NOTES.md
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            gh release edit "v${VERSION}" --notes-file release/NOTES.md
+          else
+            gh release create "v${VERSION}" --target "${{ github.sha }}" --title "Pocket Outpost Tactics v${VERSION}" --notes-file release/NOTES.md
+          fi
+          gh release upload "v${VERSION}" --clobber \
+            "release/PocketOutpostTactics-v${VERSION}.ipa" \
+            "release/PocketOutpostTactics-v${VERSION}.ipa.sha256" \
+            "release/AppStoreScreenshots-6.9in.zip"
+
+      - name: Upload to TestFlight
+        if: env.IPA_READY == '1' && env.EXPORT_METHOD == 'app-store-connect' && env.HAS_ASC_KEY == '1' && (github.event_name == 'push' || inputs.upload_testflight)
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.ASC_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.APPSTORE_KEY_ID || secrets.ASC_API_KEY_ID || secrets.API_KEY_ID || secrets.APPSTORE_API_KEY_ID || secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID || secrets.APPSTORE_ISSUER_ID || secrets.ASC_API_ISSUER_ID || secrets.API_ISSUER_ID || secrets.APPSTORE_API_ISSUER_ID || secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app -f "release/PocketOutpostTactics-v${VERSION}.ipa" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee build-testflight.log
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Pocket Outpost Tactics CI"
+            echo "- Signing mode: ${SIGNING_MODE:-not run}"
+            echo "- Export method: ${EXPORT_METHOD:-n/a}"
+            echo "- Bundle ID: ${BUNDLE_ID:-n/a}"
+            echo "- IPA exported: ${IPA_READY:-no}"
+            if [ -f release/PocketOutpostTactics-v${VERSION}.ipa.sha256 ]; then echo "- SHA-256: \`$(cut -d' ' -f1 release/*.sha256)\`"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          [ -n "${KEYCHAIN_PATH:-}" ] && security delete-keychain "$KEYCHAIN_PATH" || true
+          rm -f Config/Signing.generated.xcconfig
+          rm -rf "$HOME/.appstoreconnect"

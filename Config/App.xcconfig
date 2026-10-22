@@ -1,0 +1,9 @@
+// Defaults for local development. CI writes Signing.generated.xcconfig (git-ignored) to switch to
+// manual distribution signing with the team, bundle ID and provisioning profile from repo secrets.
+POT_BUNDLE_ID = com.surproductions.pocketoutposttactics
+POT_TEAM_ID =
+POT_SIGN_STYLE = Automatic
+POT_SIGN_IDENTITY = Apple Development
+POT_PROFILE =
+
+#include? "Signing.generated.xcconfig"
