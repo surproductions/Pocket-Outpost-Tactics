@@ -110,7 +110,7 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.ASC_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.APPSTORE_KEY_ID || secrets.ASC_API_KEY_ID || secrets.API_KEY_ID || secrets.APPSTORE_API_KEY_ID || secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID || secrets.APPSTORE_ISSUER_ID || secrets.ASC_API_ISSUER_ID || secrets.API_ISSUER_ID || secrets.APPSTORE_API_ISSUER_ID || secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY || secrets.APP_STORE_CONNECT_API_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY || secrets.ASC_KEY || secrets.ASC_API_KEY || secrets.APPSTORE_PRIVATE_KEY || secrets.APPSTORE_API_PRIVATE_KEY || secrets.API_KEY_P8 || secrets.APP_STORE_CONNECT_API_KEY_CONTENT || secrets.ASC_KEY_CONTENT }}
+          ASC_KEY: ${{ secrets.ASC_KEY_P8 || secrets.APP_STORE_CONNECT_API_KEY || secrets.APP_STORE_CONNECT_API_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY || secrets.ASC_KEY || secrets.ASC_API_KEY || secrets.APPSTORE_PRIVATE_KEY || secrets.APPSTORE_API_PRIVATE_KEY || secrets.API_KEY_P8 || secrets.APP_STORE_CONNECT_API_KEY_CONTENT || secrets.ASC_KEY_CONTENT }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID || secrets.TEAM_ID || secrets.DEVELOPMENT_TEAM || secrets.APPLE_DEVELOPER_TEAM_ID || secrets.IOS_TEAM_ID }}
           BUNDLE_ID_SECRET: ${{ secrets.APP_BUNDLE_ID || secrets.BUNDLE_ID || secrets.BUNDLE_IDENTIFIER || secrets.APP_IDENTIFIER || secrets.IOS_BUNDLE_ID }}
         run: scripts/ci_signing.sh

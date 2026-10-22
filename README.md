@@ -107,9 +107,9 @@ Team ID, bundle ID and export method (App Store vs Ad Hoc) are read from the pro
 **B. App Store Connect API key (automatic signing)**
 | Secret | Content |
 | --- | --- |
-| `APP_STORE_CONNECT_API_KEY_ID` | Key ID |
-| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
-| `APP_STORE_CONNECT_API_KEY` | Contents of `AuthKey_XXXX.p8` (raw or base64) |
+| `ASC_KEY_ID` | Key ID |
+| `ASC_ISSUER_ID` | Issuer ID |
+| `ASC_KEY_P8` (or `APP_STORE_CONNECT_API_KEY`) | Contents of `AuthKey_XXXX.p8` (raw or base64) |
 | `APPLE_TEAM_ID` | 10-character Team ID |
 | `APP_BUNDLE_ID` | Optional, defaults to `com.surproductions.pocketoutposttactics` |
 
